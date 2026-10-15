@@ -1,0 +1,347 @@
+```html
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - RuangKu</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Admin RuangKu</h1>
+
+    <p class="subtitle">
+        Kelola pengajuan reservasi ruangan
+    </p>
+
+
+    <!-- ==================================================
+         KELOLA RUANGAN
+         ================================================== -->
+
+    <h2>Kelola Ruangan</h2>
+
+    <!-- FORM TAMBAH RUANGAN -->
+
+    <form action="/admin/ruangan/tambah" method="POST">
+
+        <label for="nama">
+            Nama Ruangan
+        </label>
+
+        <input
+            type="text"
+            id="nama"
+            name="nama"
+            required
+        >
+
+        <label for="kapasitas">
+            Kapasitas
+        </label>
+
+        <input
+            type="number"
+            id="kapasitas"
+            name="kapasitas"
+            min="1"
+            required
+        >
+
+        <button type="submit">
+            + Tambah Ruangan
+        </button>
+
+    </form>
+
+    <br>
+
+
+    <!-- ==================================================
+         DAFTAR RUANGAN
+         ================================================== -->
+
+    {% if ruangan %}
+
+    <table border="1" cellpadding="10" cellspacing="0">
+
+        <tr>
+            <th>Nama Ruangan</th>
+            <th>Kapasitas</th>
+            <th>Aksi</th>
+        </tr>
+
+        {% for r in ruangan %}
+
+        <tr>
+
+            <td>
+                {{ r["nama"] }}
+            </td>
+
+            <td>
+                {{ r["kapasitas"] }} orang
+            </td>
+
+            <td>
+
+                <!-- EDIT RUANGAN -->
+
+                <form
+                    action="/admin/ruangan/edit/{{ r['id'] }}"
+                    method="POST"
+                    style="display:inline;"
+                >
+
+                    <input
+                        type="text"
+                        name="nama"
+                        value="{{ r['nama'] }}"
+                        required
+                    >
+
+                    <input
+                        type="number"
+                        name="kapasitas"
+                        value="{{ r['kapasitas'] }}"
+                        min="1"
+                        required
+                    >
+
+                    <button type="submit">
+                        ✏️ edit
+                    </button>
+
+                </form>
+
+
+                <!-- HAPUS RUANGAN -->
+
+                <form
+                    action="/admin/ruangan/hapus/{{ r['id'] }}"
+                    method="POST"
+                    style="display:inline;"
+                >
+
+                    <button
+                        type="submit"
+                        onclick="return confirm('Yakin ingin menghapus ruangan ini?')"
+                    >
+                        🗑️ Hapus
+                    </button>
+
+                </form>
+
+            </td>
+
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+    {% else %}
+
+        <p>
+            Belum ada ruangan.
+        </p>
+
+    {% endif %}
+
+
+    <br>
+    <br>
+
+
+    <!-- ==================================================
+         PENGAJUAN RESERVASI
+         ================================================== -->
+
+    <h2>Pengajuan Reservasi</h2>
+
+    {% if reservasi %}
+
+    <table border="1" cellpadding="10" cellspacing="0">
+
+        <tr>
+
+            <th>Nama</th>
+            <th>NIM</th>
+            <th>Ruangan</th>
+            <th>Tanggal</th>
+            <th>Jam</th>
+            <th>Peserta</th>
+            <th>Keperluan</th>
+            <th>Status</th>
+            <th>Aksi</th>
+
+        </tr>
+
+
+        {% for r in reservasi %}
+
+        <tr>
+
+            <td>
+                {{ r["nama"] }}
+            </td>
+
+            <td>
+                {{ r["nim"] }}
+            </td>
+
+            <td>
+                {{ r["ruangan"] }}
+            </td>
+
+            <td>
+                {{ r["tanggal"] }}
+            </td>
+
+            <td>
+                {{ r["jam_mulai"] }} - {{ r["jam_selesai"] }}
+            </td>
+
+            <td>
+                {{ r["jumlah_peserta"] }}
+            </td>
+
+            <td>
+                {{ r["keperluan"] }}
+            </td>
+
+
+            <!-- STATUS -->
+
+            <td>
+
+                {% if r["status"] == "Menunggu" %}
+
+                    <span>
+                        Menunggu
+                    </span>
+
+                {% elif r["status"] == "Disetujui" %}
+
+                    <span>
+                        Disetujui
+                    </span>
+
+                {% elif r["status"] == "Ditolak" %}
+
+                    <span>
+                        Ditolak
+                    </span>
+
+                {% else %}
+
+                    {{ r["status"] }}
+
+                {% endif %}
+
+            </td>
+
+
+            <!-- AKSI -->
+
+            <td>
+
+                {% if r["status"] == "Menunggu" %}
+
+                    <!-- SETUJUI -->
+
+                    <form
+                        action="/admin/setujui/{{ r['id'] }}"
+                        method="POST"
+                    >
+
+                        <button type="submit">
+                            Setujui
+                        </button>
+
+                    </form>
+
+                    <br>
+
+                    <!-- TOLAK -->
+
+                    <form
+                        action="/admin/tolak/{{ r['id'] }}"
+                        method="POST"
+                    >
+
+                        <button type="submit">
+                            Tolak
+                        </button>
+
+                    </form>
+
+                {% endif %}
+
+
+                <!-- HAPUS RESERVASI YANG SUDAH LEWAT -->
+
+                {% if r["tanggal"] < current_date or
+                      (r["tanggal"] == current_date and r["jam_selesai"] < current_time) %}
+
+                    <br>
+
+                    <form
+                        action="/admin/reservasi/hapus/{{ r['id'] }}"
+                        method="POST"
+                    >
+
+                        <button
+                            type="submit"
+                            onclick="return confirm('Yakin ingin menghapus reservasi yang sudah lewat ini?')"
+                        >
+                            🗑️ Hapus
+                        </button>
+
+                    </form>
+
+                {% endif %}
+
+            </td>
+
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+    {% else %}
+
+        <p>
+            Belum ada pengajuan reservasi.
+        </p>
+
+    {% endif %}
+
+
+    <br>
+
+
+    <!-- ==================================================
+         LOGOUT
+         ================================================== -->
+
+    <a href="/logout">
+
+        <button type="button">
+            Logout
+        </button>
+
+    </a>
+
+</div>
+
+</body>
+</html>
+```
